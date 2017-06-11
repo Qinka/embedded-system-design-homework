@@ -20,10 +20,11 @@
 #include <linux/fs.h>
 #include <linux/slab.h>
 #include <linux/cdev.h>
+#include <linux/device.h>
 
 struct led_dev {
   struct cdev cdev;
-}
+};
 
 
 #endif // _LED_H_
