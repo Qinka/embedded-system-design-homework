@@ -24,7 +24,7 @@ static int rwbuf_open(struct inode *inode, struct file *filep)
 {
   if (buffer == NULL) {
     printk("LED CONTROLLER: alloc space for buffer\n");
-    buffer = vmalloc(1024);
+    buffer = kmalloc(1024,GFP_ATOMIC);
     if (buffer == NULL) {
       printk("LED CONTROLLER: Still NULL\n");
       return 1;
@@ -40,7 +40,7 @@ static int rwbuf_close(struct inode *inode, struct file *filep)
 {
   --count;
   if(count == 0) {
-    vfree(buffer);
+    kfree(buffer);
     buffer = NULL;
   }
   module_put(THIS_MODULE);
@@ -85,20 +85,21 @@ static struct file_operations rwbuf_fops =
 
 
 //// MODULE INIT
-static int init_module() {
+static int init_ledc(void) {
   printk("LED CONTROLLER: start!\n");
-  alloc_chrdev_region(&dev_id,0,1,"/dev/qled");
+  if(alloc_chrdev_region(&dev_id,0,1,"qled")<0)
+	printk("LED_CONTROLLER: fail alloc devices\n");
   return 0;
 }
 
 //// MODULE CLEANUP
-static void exit_module() {
+static void exit_ledc(void) {
   printk("LED CONTROLLER: exit!\n");
   unregister_chrdev_region(dev_id,1);
 }
 
-module_init(init_module);
-module_exit(exit_module);
+module_init(init_ledc);
+module_exit(exit_ledc);
 
 MODULE_LICENSE("GPL3");
 MODULE_AUTHOR("Qinka<qinka@live.com>");
