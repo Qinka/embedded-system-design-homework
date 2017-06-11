@@ -18,7 +18,9 @@
 static char * buffer = NULL;
 static unsigned int count=0;
 static dev_t dev_id;
-
+static unsigned int led_major = 0;
+static struct led_dev *led_devs = NULL;
+static struct class *led_class = NULL;
 
 static int rwbuf_open(struct inode *inode, struct file *filep)
 {
@@ -87,14 +89,42 @@ static struct file_operations rwbuf_fops =
 //// MODULE INIT
 static int init_ledc(void) {
   printk("LED CONTROLLER: start!\n");
-  if(alloc_chrdev_region(&dev_id,0,1,"qled")<0)
+  if(alloc_chrdev_region(&dev_id,0,1,"qled")<0) {
 	printk("LED_CONTROLLER: fail alloc devices\n");
+	return -1;
+  }
+  led_major = MAJOR(dev_id);
+  led_class = class_create(THIS_MODULE,"qled");
+  if (IS_ERR(led_class)) {
+    err = PTR_ERR(led_class);
+    printk("LED CONTROLLER: fail to create class");
+    return err;
+  }
+  led_devs = (struct led_dev*)kzalloc(sizeof(led_dev),GFP_KERNEL);
+  if (led_devs == NULL) {
+    printk("LED CONTROLLER: fail to create devs");
+    return -1;
+  }
+  dev_t devno = MKDEV(led_major,1);
+  struct device * device = NULL;
+  cdev_init(&led_devs->cdev,&rwbuf_fops);
+  led_devs->cdev.owner = THIS_MODULE;
+  if(cdev_add(&dev_cdev,devno,1)) {
+    printk("LED_CONTROLLER: fail to add to devno");
+    return -31;
+  }
+  device = device_create(class,NULL,devno,NULL,"qled%d",1);
+  if(IS_ERR(device)) {
+    printk("LED CONtroller: fail to create device %d",PTR_ERR(device);
   return 0;
 }
 
 //// MODULE CLEANUP
 static void exit_ledc(void) {
   printk("LED CONTROLLER: exit!\n");
+  device_destory(class,dev_id,1);
+  cdev_del(&led_devs->cdev);
+  class_destory(led_class);
   unregister_chrdev_region(dev_id,1);
 }
 

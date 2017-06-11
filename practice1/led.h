@@ -19,5 +19,11 @@
 #include <linux/kernel.h>
 #include <linux/fs.h>
 #include <linux/slab.h>
+#include <linux/cdev.h>
+
+struct led_dev {
+  struct cdev cdev;
+}
+
 
 #endif // _LED_H_
