@@ -31,6 +31,7 @@ static int rwbuf_open(struct inode *inode, struct file *filep)
       printk("LED CONTROLLER: Still NULL\n");
       return 1;
     }
+    strcpy(buffer,"12345\n");
   }
   try_module_get(THIS_MODULE);
   ++count;
