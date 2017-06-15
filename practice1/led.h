@@ -22,6 +22,10 @@
 #include <linux/cdev.h>
 #include <linux/device.h>
 
+
+#define BUFFER_SIZE (1024)
+
+
 struct led_dev {
   struct cdev cdev;
 };

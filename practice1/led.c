@@ -19,19 +19,17 @@ static char * buffer = NULL;
 static unsigned int count=0;
 static dev_t dev_id;
 static unsigned int led_major = 0;
-static struct led_dev *led_devs = NULL;
-static struct class *led_class = NULL;
+static struct led_dev led_devs;
 
 static int rwbuf_open(struct inode *inode, struct file *filep)
 {
   if (buffer == NULL) {
     printk("LED CONTROLLER: alloc space for buffer\n");
-    buffer = kmalloc(1024,GFP_ATOMIC);
+    buffer = kmalloc(BUFFER_SIZE,GFP_ATOMIC);
     if (buffer == NULL) {
       printk("LED CONTROLLER: Still NULL\n");
       return 1;
     }
-    strcpy(buffer,"12345\n");
   }
   try_module_get(THIS_MODULE);
   ++count;
@@ -52,27 +50,18 @@ static int rwbuf_close(struct inode *inode, struct file *filep)
 
 static ssize_t rwbuf_write(struct file *filep, const char *buf, size_t count, loff_t *ppos)
 {
-  char *rdp = buf;
-  for(size_t i = 0; i< count; ++i) {
-    if(*rdp = '\0') {
-      rdp = buf;
-    }
-    buffer[count % 1024] = *rdp;
-    ++rdp;
-  }
-  return count;
+  int len = count > BUFFER_SIZE ? BUFFER_SIZE : count;
+  copy_from_user(buffer, buf, len);
+  printk("LED CONTROLLER: write %d\n", len);
+  return ;
 }
 
 static ssize_t rwbuf_read(struct file *filep, char *buf, size_t count, loff_t *ppos)
 {
-  char * rdp = buf;
-  size_t i = 0;
-  while(rdp != '\0') {
-    *rdp = buffer[i];
-    ++i;
-    ++rdp;
-  }
-  return count-i;
+  int len = count > BUFFER_SIZE ? BUFFER_SIZE : count;
+  copy_to_user(buf, rwbuf, len);
+  printk("LED CONTROLLER: write %d\n", len);
+  return len;
 }
 
 
@@ -95,27 +84,17 @@ static int init_ledc(void) {
 	return -1;
   }
   led_major = MAJOR(dev_id);
-  led_class = class_create(THIS_MODULE,"qled");
-  if (IS_ERR(led_class)) {
-    printk("LED CONTROLLER: fail to create class %d",PTR_ERR(led_class));
-    return -24;
-  }
   led_devs = (struct led_dev*)kzalloc(sizeof(struct led_dev),GFP_KERNEL);
   if (led_devs == NULL) {
     printk("LED CONTROLLER: fail to create devs");
     return -1;
   }
-  dev_t devno = MKDEV(led_major,1);
-  struct device * device = NULL;
-  cdev_init(&led_devs->cdev,&rwbuf_fops);
-  led_devs->cdev.owner = THIS_MODULE;
-  if(cdev_add(&led_devs->cdev,devno,1)) {
+  dev_t devno = MKDEV(led_major,0);
+  cdev_init(&led_devs.cdev,&rwbuf_fops);
+  led_devs.cdev.owner = THIS_MODULE;
+  if(cdev_add(&led_devs.cdev,devno,1)) {
     printk("LED_CONTROLLER: fail to add to devno");
     return -31;
-  }
-  device = device_create(led_class,NULL,devno,NULL,"qled%d",1);
-  if(IS_ERR(device)) {
-    printk("LED CONtroller: fail to create device %d",PTR_ERR(device));
   }
   return 0;
 }
@@ -123,9 +102,7 @@ static int init_ledc(void) {
 //// MODULE CLEANUP
 static void exit_ledc(void) {
   printk("LED CONTROLLER: exit!\n");
-  device_destroy(led_class,dev_id);
-  cdev_del(&led_devs->cdev);
-  class_destroy(led_class);
+  cdev_del(&led_devs.cdev);
   unregister_chrdev_region(dev_id,1);
 }
 
