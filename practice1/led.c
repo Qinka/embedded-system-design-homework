@@ -75,6 +75,7 @@ static ssize_t rwbuf_read(struct file *filep, char *buf, size_t count, loff_t *f
     if (*f_pos < buf_size) {
         len = count + *f_pos > buf_size ? buf_size - *f_pos : count;
         copy_to_user(buf,buffer + *f_pos,len);
+        *f_pos += len;
     }
   }
   printk("LED CONTROLLER: read %d\n", len);
