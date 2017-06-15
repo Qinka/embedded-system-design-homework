@@ -21,13 +21,14 @@
 #include <linux/slab.h>
 #include <linux/cdev.h>
 #include <linux/device.h>
-
+#include <linux/error.h>
 
 #define BUFFER_SIZE (1024)
 
-
 struct led_dev {
   struct cdev cdev;
+  char* buffer = NULL;
+  unsigned long buf_size=0;
 };
 
 

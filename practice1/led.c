@@ -15,7 +15,6 @@
 
 
 //// Datas
-static char * buffer = NULL;
 static unsigned int count=0;
 static dev_t dev_id;
 static unsigned int led_major = 0;
@@ -23,15 +22,11 @@ static struct led_dev led_devs;
 
 static int rwbuf_open(struct inode *inode, struct file *filep)
 {
-  if (buffer == NULL) {
-    printk("LED CONTROLLER: alloc space for buffer\n");
-    buffer = kmalloc(BUFFER_SIZE,GFP_ATOMIC);
-    if (buffer == NULL) {
-      printk("LED CONTROLLER: Still NULL\n");
-      return 1;
-    }
+  if(count == 0) {
+    kmalloc(filep->private_date->buffer,BUFFER_SIZE);
+    filep->private_date->buf_size=BUFFER_SIZE;
+    try_module_get(THIS_MODULE);
   }
-  try_module_get(THIS_MODULE);
   ++count;
   return 0;
 }
@@ -41,29 +36,68 @@ static int rwbuf_close(struct inode *inode, struct file *filep)
 {
   --count;
   if(count == 0) {
-    kfree(buffer);
-    buffer = NULL;
+    if(!filep->private_date->buffer)
+      kfree(filep->private_date->buffer);
   }
   module_put(THIS_MODULE);
   return 0;
 }
 
-static ssize_t rwbuf_write(struct file *filep, const char *buf, size_t count, loff_t *ppos)
+static ssize_t rwbuf_write(struct file *filep, char *buf, size_t count, loff_t *f_pos)
 {
-  int len = count > BUFFER_SIZE ? BUFFER_SIZE : count;
-  copy_from_user(buffer, buf, len);
-  printk("LED CONTROLLER: write %d\n", len);
-  return ;
-}
-
-static ssize_t rwbuf_read(struct file *filep, char *buf, size_t count, loff_t *ppos)
-{
-  int len = count > BUFFER_SIZE ? BUFFER_SIZE : count;
-  copy_to_user(buf, rwbuf, len);
+  int len = -ENOMEM;
+  struct led_dev* dev = filep -> private_date;
+  if(dev->buffer) {
+    if (*f_pos < dev->buf_size) {
+        len = count + *f_pos > dev->buf_size ? dev->buf_size - *f_pos : count;
+        copy_from_user(dev->buffer + *f_pos,buf,len);
+    }
+    else {
+        len = count > dev->buf_size ? dev->buf_size  : count;
+        copy_from_user(dev->buffer + *f_pos,buf,len);
+    }
+  }
   printk("LED CONTROLLER: write %d\n", len);
   return len;
 }
 
+static ssize_t rwbuf_read(struct file *filep, char *buf, size_t count, loff_t *f_pos)
+{
+  int len = 0;
+  struct led_dev* dev = filep -> private_date;
+  if(dev->buffer) {
+    if (*f_pos < dev->buf_size) {
+        len = count + *f_pos > dev->buf_size ? dev->buf_size - *f_pos : count;
+        copy_from_user(dev->buffer + *f_pos,buf,len);
+    }
+  }
+  printk("LED CONTROLLER: write %d\n", len);
+  return len;
+}
+
+static int rwbuf_ioctl(struct inode* inode, struct file* file,unsigned int cmd, unsigned int arg) {
+  struct led_dev *dev = file->private_date;
+  switch (cmd)
+  {
+  case 0x1:
+    if(dev->buffer)
+      kfree(dev->buffer);
+    kmalloc(file->private_date->buffer,arg);
+    dev->buf_size = arg;
+    printk("LED_CONTROLLER: alloc the buffer\n");
+    return 0;
+  case 0x2;
+    if(dev->buffer) {
+      kfree(dev->buffer);
+      dev->buf_size = 0;
+      printk("LED_CONTROLLER: free the buffer\n");
+    }
+    return 0;
+  default:
+    printk("LED_CONTROLLER: ERROR ARG %ul %ul\n", cmd, arg);
+    return -ENVAL;
+  }
+}
 
 // file operations
 static struct file_operations rwbuf_fops =
@@ -72,6 +106,7 @@ static struct file_operations rwbuf_fops =
   release: rwbuf_close,
   read:    rwbuf_read,
   write:   rwbuf_write,
+  
   };
 
 
