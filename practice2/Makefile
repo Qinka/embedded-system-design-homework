@@ -1,5 +1,5 @@
-obj-m:=ledmod.o
-ledmod-y:=led.o
+obj-m:=ledmodp.o
+ledmodp-y:=led.o
 
 
 KERNELBUILD:=~/rpi2/linux-rpi-4.4.y

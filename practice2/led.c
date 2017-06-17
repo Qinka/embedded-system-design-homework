@@ -59,13 +59,13 @@ static ssize_t qled_write(struct file *filep, char *buf, size_t count, loff_t *f
 {
   int len = -ENOMEM;
   if(buffer) {
-    if (*f_pos < buf_size) {
-        len = count + *f_pos > buf_size ? buf_size - *f_pos : count;
+    if (*f_pos < buffer_size) {
+        len = count + *f_pos > buffer_size ? buffer_size - *f_pos : count;
         copy_from_user(buffer + *f_pos,buf,len);
         printk("LED CONTROLLER: write  (A)");
     }
     else {
-        len = count > buf_size ? buf_size  : count;
+        len = count > buffer_size ? buffer_size  : count;
         copy_from_user(buffer + *f_pos,buf,len);
         printk("LED CONTROLLER: write (B)");
     }
@@ -78,8 +78,8 @@ static ssize_t qled_read(struct file *filep, char *buf, size_t count, loff_t *f_
 {
   int len = 0;
   if(buffer) {
-    if (*f_pos < buf_size) {
-        len = count + *f_pos > buf_size ? buf_size - *f_pos : count;
+    if (*f_pos < buffer_size) {
+        len = count + *f_pos > buffer_size ? buffer_size - *f_pos : count;
         copy_to_user(buf,buffer + *f_pos,len);
         *f_pos += len;
     }
