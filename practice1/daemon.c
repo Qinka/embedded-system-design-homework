@@ -15,44 +15,24 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <wiringPi.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <linux/fs.h>
 
 static int fd;
 
 int main() {
   printf("LED CONTROLLER DAEMON START\n");
-  int pid = fork();
-  if(pid != 0) {
-    printf("ERR: fail fork\n");
-    return pid > 0;
-  }
-  if(setsid() < 0) {
-    printf("ERR: fail setsid\n");
-    return 2;
-  }  
-  struct sigaction act;   
-  act.sa_handler=SIG_IGN;
-  sigemptyset(&act.sa_mask);
-  act.sa_flags=0;
-  if(sigaction(SIGHUP,&act,NULL)<0){
-    printf("sigaction error.");
-    return 3;
-  }
-  pid = fork();
-  if (pid != 0) {
-    printf("ERR: fail fork fork\n");
-    return pid > 0;
-  }    
-  chdir("/");
-  umask(0);
-  for(i=0;i<NOFILE;i++)
-    close(i);
+  daemon(0,0);
   return daemon_process();
 }
 
 
 int pin_setup(int* pins) {
   wiringPiSetup();
-  for(i = 0; i< 8; ++i)
+  for(int i = 0; i< 8; ++i)
     pinMode(pins[i],OUTPUT);
 }
 
@@ -79,7 +59,7 @@ int qled_display_negative(int *pins,char c) {
 void qled_close(void) {
   close(fd);
 }
-void qled_close_signal(int) {
+void qled_close_signal(int i) {
   close(fd);
 }
 
@@ -98,7 +78,7 @@ int daemon_process() {
   char pos,neg;
   fd = open("/dev/qled",O_RDWR);
   while(1) { // main loop
-    read(fd,buf,1024);
+    read(fd,buffer,1024);
     for(cur = buffer; cur < buffer + 1024; ++ cur){
       if (*cur) {
 	pos = *cur & 0x0F;
