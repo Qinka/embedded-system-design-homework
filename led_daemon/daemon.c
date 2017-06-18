@@ -26,12 +26,6 @@ static int fd;
 int daemon_process();
 
 
-int main() {
-  printf("LED CONTROLLER DAEMON START\n");
-//  if(!daemon(0,0))
-//    perror("funk");
-  return daemon_process();
-}
 
 
 int pin_setup(int* pins) {
@@ -71,11 +65,9 @@ void qled_close_signal(int i) {
 }
 
 
-int daemon_process() {
-  /*if(setsid() < 0) {
-    perror("ll?");
-    return -1;
-  }*/
+
+int main(int argc, char **argv) {
+  printf("LED CONTROLLER DAEMON START\n");
   atexit(qled_close);
   signal(SIGINT, qled_close_signal);  
   int pins[8] = {0,1,3,4,24,25,27,28};
@@ -85,7 +77,7 @@ int daemon_process() {
   char buffer[1024];
   bzero(buffer,1024);
   char pos,neg;
-  fd = open("/dev/qled",O_RDWR);
+  fd = open(argv[1],O_RDWR);
   write(fd,buffer,1024);
   int i = 0;
   while(1) { // main loop
@@ -103,4 +95,3 @@ int daemon_process() {
   }
   return 0;
 }
-
