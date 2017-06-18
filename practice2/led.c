@@ -14,7 +14,7 @@
 #include "led.h"
 
 // params
-static unsigned long buffer_size;
+static unsigned long buffer_size = 0;
 
 ///// Datas
 static char *buffer;
@@ -27,6 +27,7 @@ static unsigned int count=0;
 
 // proc open
 static int qled_open(struct inode* inode, struct file *file) {
+  printk("LED CONTROLLER: open %u\n",count);
   if(count ==0 || buffer == NULL) {
     if(buffer_size == 0) {
       buffer_size = BUF_SIZE;
@@ -36,9 +37,11 @@ static int qled_open(struct inode* inode, struct file *file) {
       printk("LED CONTROLLER: can not alloc");
       return -1;
     }
+    printk("LED CONTROLLER: alloc\n");
+    buffer_size=BUFFER_SIZE;
   }
   try_module_get(THIS_MODULE);
-  count ++;
+  ++ count;
   return 0;
 }
 
@@ -47,12 +50,36 @@ static int qled_open(struct inode* inode, struct file *file) {
 static int qled_close(struct inode *inode, struct file *filep)
 {
   --count;
+  printk("LED CONTROLLER: close %u",count);
   if(count == 0) {
-    if(!buffer)
+    if(buffer) {
       kfree(buffer);
+      printk("LED CONTROLLER: free\n");
+      buffer = NULL;
+    }
   }
   module_put(THIS_MODULE);
   return 0;
+}
+
+static loff_t qled_llseek(struct file *file,loff_t o,int whence) {
+  loff_t newpos;
+  switch (whence) {
+    case SEEK_SET:
+      newpos = o;
+      break;
+    case SEEK_CUR:
+      newpos = file->f_pos + o;
+      break;
+    case SEEK_END:
+      newpos = buffer_size + o;
+      break;
+    default:
+      return -EINVAL;
+  }
+  if(newpos <0) return -EINVAL;
+  file->f_pos = newpos;
+  return newpos;
 }
 
 static ssize_t qled_write(struct file *filep, char *buf, size_t count, loff_t *f_pos)
@@ -62,15 +89,13 @@ static ssize_t qled_write(struct file *filep, char *buf, size_t count, loff_t *f
     if (*f_pos < buffer_size) {
         len = count + *f_pos > buffer_size ? buffer_size - *f_pos : count;
         copy_from_user(buffer + *f_pos,buf,len);
-        printk("LED CONTROLLER: write  (A)");
     }
     else {
         len = count > buffer_size ? buffer_size  : count;
         copy_from_user(buffer + *f_pos,buf,len);
-        printk("LED CONTROLLER: write (B)");
     }
+    *f_pos += len;
   }
-  printk("LED CONTROLLER: write %d\n", len);
   return len;
 }
 
@@ -81,10 +106,9 @@ static ssize_t qled_read(struct file *filep, char *buf, size_t count, loff_t *f_
     if (*f_pos < buffer_size) {
         len = count + *f_pos > buffer_size ? buffer_size - *f_pos : count;
         copy_to_user(buf,buffer + *f_pos,len);
-        *f_pos += len;
     }
+    *f_pos += len;
   }
-  printk("LED CONTROLLER: read %d\n", len);
   return len;
 }
 
@@ -95,6 +119,7 @@ static struct file_operations qled_fops = {
   release: qled_close,
   read:    qled_read,
   write:   qled_write,
+  llseek:  qled_llseek,
   };
 
 
@@ -110,10 +135,16 @@ static int init_ledc(void) {
 static void exit_ledc(void) {
   printk("LED CONTROLLER: exit!\n");
   remove_proc_entry("qled",NULL);
+  if(buffer) {
+    kfree(buffer);
+    printk("LED CONTROLLER: free");
+  }
 }
 
 module_init(init_ledc);
 module_exit(exit_ledc);
+
+module_param(buffer_size,ulong,S_IRUGO);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Qinka<qinka@live.com>");
