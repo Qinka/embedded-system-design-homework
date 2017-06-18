@@ -21,25 +21,32 @@
 #include <fcntl.h>
 #include <linux/fs.h>
 
+
 static int fd;
+int daemon_process();
+
 
 int main() {
   printf("LED CONTROLLER DAEMON START\n");
-  daemon(0,0);
+//  if(!daemon(0,0))
+//    perror("funk");
   return daemon_process();
 }
 
 
 int pin_setup(int* pins) {
   wiringPiSetup();
-  for(int i = 0; i< 8; ++i)
+  for(int i = 0; i< 8; ++i) {
     pinMode(pins[i],OUTPUT);
+    digitalWrite(pins[i],i<4?LOW:HIGH);
+  }
+  return 0;
 }
 
 
 
 int qled_display_positive(int *pins,char c) {
-#define DISPLAY(c,v,i) {if((i) & (v)) digitalWrite(pins[(i)],HIGH);else digitalWrite(pins[(i)],LOW);}
+#define DISPLAY(c,v,i) {if((c) & (v)) digitalWrite(pins[(i)],HIGH);else digitalWrite(pins[(i)],LOW);}
   DISPLAY(c,0x8,0);
   DISPLAY(c,0x4,1);
   DISPLAY(c,0x2,2);
@@ -47,8 +54,8 @@ int qled_display_positive(int *pins,char c) {
 #undef DISPLAY
 }
 
-int qled_display_negative(int *pins,char c) {  
-#define DISPLAY(c,v,i) {if((i % 4) == (v)) digitalWrite(pins[(i)],LOW);else digitalWrite(pins[(i)],HIGH);}
+int qled_display_negative(int *pins,int c) {  
+#define DISPLAY(c,v,i) {if((c % 4) == (v)) digitalWrite(pins[(i)],LOW);else digitalWrite(pins[(i)],HIGH);}
   DISPLAY(c,0,4);
   DISPLAY(c,1,5);
   DISPLAY(c,2,6);
@@ -65,8 +72,10 @@ void qled_close_signal(int i) {
 
 
 int daemon_process() {
-  if(setsid() < 0)
+  /*if(setsid() < 0) {
+    perror("ll?");
     return -1;
+  }*/
   atexit(qled_close);
   signal(SIGINT, qled_close_signal);  
   int pins[8] = {0,1,3,4,24,25,27,28};
@@ -74,21 +83,24 @@ int daemon_process() {
   // controller
   pin_setup(pins);
   char buffer[1024];
-  char *cur;
+  bzero(buffer,1024);
   char pos,neg;
   fd = open("/dev/qled",O_RDWR);
+  write(fd,buffer,1024);
+  int i = 0;
   while(1) { // main loop
+    lseek(fd,0,SEEK_SET);
     read(fd,buffer,1024);
-    for(cur = buffer; cur < buffer + 1024; ++ cur){
-      if (*cur) {
-	pos = *cur & 0x0F;
-	neg = (*cur & 0xF0) >> 4;
+    for(i %= 4; i < 1024; ++ i){
+      if (buffer[i]) {
+	pos = buffer[i] & 0x0F;
 	qled_display_positive(pins,pos);
-	qled_display_negative(pins,neg);
-	delay(10);
+	qled_display_negative(pins,i);
+	delay(1u);
       }
       else break;
     }
   }
+  return 0;
 }
 
