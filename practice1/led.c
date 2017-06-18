@@ -24,15 +24,17 @@ static char * buffer;
 static unsigned long buf_size;
 
 static int rwbuf_open(struct inode *inode, struct file *filep) {
+  printk("LED CONTROLLER: open %u\n",count);
   if(count == 0 || buffer == NULL) {
     buffer = kmalloc(BUFFER_SIZE,GFP_KERNEL);
     if(buffer == NULL){
       printk("LED CONTROLLER: can not alloc");
       return -1;
     }
+    printk("LED CONTROLLER: alloc\n");
     buf_size=BUFFER_SIZE;
-    try_module_get(THIS_MODULE);
   }
+  try_module_get(THIS_MODULE);
   ++count;
   return 0;
 }
@@ -41,12 +43,35 @@ static int rwbuf_open(struct inode *inode, struct file *filep) {
 static int rwbuf_close(struct inode *inode, struct file *filep)
 {
   --count;
+  printk("LED CONTROLLER: close %u",count);
   if(count == 0) {
-    if(!buffer)
+    if(buffer) {
       kfree(buffer);
+      printk("LED CONTROLLER: free\n");
+    }
   }
   module_put(THIS_MODULE);
   return 0;
+}
+
+static loff_t rwbuf_llseek(struct file *file,loff_t o,int whence) {
+  loff_t newpos;
+  switch (whence) {
+    case SEEK_SET:
+      newpos = o;
+      break;
+    case SEEK_CUR:
+      newpos = file->f_pos + o;
+      break;
+    case SEEK_END:
+      newpos = buf_size + o;
+      break;
+    default:
+      return -EINVAL;
+  }
+  if(newpos <0) return -EINVAL;
+  file->f_pos = newpos;
+  return newpos;
 }
 
 static ssize_t rwbuf_write(struct file *filep, char *buf, size_t count, loff_t *f_pos)
@@ -56,15 +81,16 @@ static ssize_t rwbuf_write(struct file *filep, char *buf, size_t count, loff_t *
     if (*f_pos < buf_size) {
         len = count + *f_pos > buf_size ? buf_size - *f_pos : count;
         copy_from_user(buffer + *f_pos,buf,len);
-        printk("LED CONTROLLER: write  (A)");
+        // printk("LED CONTROLLER: write  (A)");
     }
     else {
         len = count > buf_size ? buf_size  : count;
         copy_from_user(buffer + *f_pos,buf,len);
-        printk("LED CONTROLLER: write (B)");
+        // printk("LED CONTROLLER: write (B)");
     }
+    *f_pos += len;
   }
-  printk("LED CONTROLLER: write %d\n", len);
+  // printk("LED CONTROLLER: write %d\n", len);
   return len;
 }
 
@@ -75,10 +101,10 @@ static ssize_t rwbuf_read(struct file *filep, char *buf, size_t count, loff_t *f
     if (*f_pos < buf_size) {
         len = count + *f_pos > buf_size ? buf_size - *f_pos : count;
         copy_to_user(buf,buffer + *f_pos,len);
-        *f_pos += len;
     }
+  *f_pos += len;
   }
-  printk("LED CONTROLLER: read %d\n", len);
+  // printk("LED CONTROLLER: read %d\n", len);
   return len;
 }
 
@@ -86,8 +112,10 @@ static int rwbuf_ioctl(struct inode* inode, struct file* file,unsigned int cmd, 
   switch (cmd)
   {
   case 0x1:
-    if(buffer)
+    if(buffer) {
       kfree(buffer);
+      printk("LED CONTROLLER: free");
+    }
     buffer = kmalloc(arg,GFP_KERNEL);
     buf_size = arg;
     printk("LED_CONTROLLER: alloc the buffer\n");
@@ -95,6 +123,7 @@ static int rwbuf_ioctl(struct inode* inode, struct file* file,unsigned int cmd, 
   case 0x2:
     if(buffer) {
       kfree(buffer);
+      printk("LED CONTROLLER: free");
       buf_size = 0;
       printk("LED_CONTROLLER: free the buffer\n");
     }
@@ -111,6 +140,7 @@ static struct file_operations rwbuf_fops = {
   release: rwbuf_close,
   read:    rwbuf_read,
   write:   rwbuf_write,
+  llseek:  rwbuf_llseek,
   unlocked_ioctl:   rwbuf_ioctl,
   };
 
@@ -120,6 +150,7 @@ static struct file_operations rwbuf_fops = {
 static int init_ledc(void) {
   buffer = NULL;
   buf_size = 0;
+  count = 0;
   printk("LED CONTROLLER: start!\n");
   if(alloc_chrdev_region(&dev_id,0,1,"qled")<0) {
 	printk("LED_CONTROLLER: fail alloc devices\n");
@@ -147,6 +178,10 @@ static void exit_ledc(void) {
   cdev_del(&led_devs->cdev);
   unregister_chrdev_region(dev_id,1);
   kfree(led_devs);
+  if(buffer) {
+    kfree(buffer);
+    printk("LED CONTROLLER: free");
+  }
 }
 
 module_init(init_ledc);
