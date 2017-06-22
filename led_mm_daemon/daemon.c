@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
   // controller
   pin_setup(pins);
   fd = open(argv[1],O_RDWR);
-  char *buffer = mmap(NULL,1024,PROY_READ,MAP_SHARED,fd,0);
+  char *buffer = mmap(NULL,1024,PROT_READ,MAP_SHARED,fd,0);
   bzero(buffer,1024);
   char pos,neg;
   int i = 0;
