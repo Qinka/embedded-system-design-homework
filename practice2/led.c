@@ -38,7 +38,6 @@ static int qled_open(struct inode* inode, struct file *file) {
       return -1;
     }
     printk("LED CONTROLLER: alloc\n");
-    buffer_size=BUFFER_SIZE;
   }
   try_module_get(THIS_MODULE);
   ++ count;
