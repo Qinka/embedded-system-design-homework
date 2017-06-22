@@ -112,27 +112,28 @@ static void rwbuf_vma_close(struct vm_area_struct *vma) {
   printk("LED CONTROLLER: led VMA close\n");
 }
 
-static struct page* rwbuf_vma_nopage(struct vm_area_struct *vma, unsigned long address, int *type) {
-  struct page* pageptr;
-  unsigned long offset    = vma->vm_pgoff << PAGE_SHIFT;
-  unsigned long physaddr  = address - vma->vm_start + offset;
-  unsigned long pageframe = physaddr >> PAGE_SHIFT;
-  if(!pfn_valid(pageframe))
-    return 0;//NOPAGE_SIGBUS;
-  pageptr = 0;//pfn_to_page(pageframe);
-  get_page(pageptr);
-  if(type)
-    *type = VM_FAULT_MINOR;
-  return pageptr;
+static struct page* rwbuf_vma_fault(struct vm_area_struct *vma, struct vm_fault *vmf) {
+  struct page *page;
+  if (vmf->pgoff >= (1 << PAGE_COUNT))
+    return VM_FAULT_SIGBUS;
+  unsigned long viraddr = pages + (unsigned long)(vmf->virtual_address) - vma->vm_start  + (vma->vm_pgoff << PAGE_SHIFT);
+  page = virt_to_page(viraddr);
+  get_page(page);
+  if (vma->vm_file)
+    page->mapping = vma->vm_file->f_mapping;
+  else
+    printk(KERN_ERR "no mapping available\n");
+  vmf->page = page;
+  return 0;
 }
 
 static struct vm_operations_struct rwbuf_remap_vm_ops = {
- open   : rwbuf_vma_open,
- close  : rwbuf_vma_close,
- //nopage : rwbuf_vma_nopage,
+ open  : rwbuf_vma_open,
+ close : rwbuf_vma_close,
+ fault : rwbuf_vma_fault,
 };
   
-static int rwbuf_nopage_mmap(struct file *filp, struct vm_area_struct *vma) {
+static int rwbuf_fault_mmap(struct file *filp, struct vm_area_struct *vma) {
   unsigned long offset = vma -> vm_pgoff << PAGE_SHIFT;
   if(offset >= __pa(high_memory) || (filp->f_flags & O_SYNC))
     vma->vm_flags |= VM_IO;
@@ -152,7 +153,7 @@ static struct file_operations rwbuf_fops = {
  read:    rwbuf_read,
  write:   rwbuf_write,
  llseek:  rwbuf_llseek,
- mmap:    rwbuf_nopage_mmap,
+ mmap:    rwbuf_fault_mmap,
 };
 
 
