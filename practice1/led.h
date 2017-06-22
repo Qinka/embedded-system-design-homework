@@ -1,7 +1,7 @@
 /******************************
  * 
  *  Led Controller
- *  Kernal Module
+ *  Kernel Module
  *
  *  Copyright (C) Qinka 2017
  *  qinka@live.com me@qinka.pro
