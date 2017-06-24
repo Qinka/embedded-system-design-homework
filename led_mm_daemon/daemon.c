@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
     perror("mmap");
     exit(1);
   }
-  bzero(buffer,1024);
+  bzero(buffer,__size);
   char pos,neg;
   unsigned long i = 0;
   while(1) { // main loop

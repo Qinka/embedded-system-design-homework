@@ -1,6 +1,10 @@
 #!/bin/bash
 
-module="ledmod"
+if [ -z "$1" ]; then
+	module="ledmod"
+else
+	module="$1"
+fi
 device="qled"
 mode="0666"
 set -e
