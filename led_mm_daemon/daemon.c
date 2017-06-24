@@ -76,18 +76,17 @@ int main(int argc, char **argv) {
   // controller
   pin_setup(pins);
   fd = open(argv[1],O_RDWR);
-  printf("123 %d\n",fd);
-  char *buffer = mmap(NULL,1024,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
-  printf("321 %ul", buffer);
+  const unsigned long __size = 16 * sysconf(_SC_PAGESIZE);
+  char *buffer = mmap(NULL,__size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
   if(buffer == MAP_FAILED) {
     perror("mmap");
     exit(1);
   }
   bzero(buffer,1024);
   char pos,neg;
-  int i = 0;
+  unsigned long i = 0;
   while(1) { // main loop
-    for(i %= 4; i < 1024; ++ i){
+    for(i %= 4; i < __size; ++ i){
       if (buffer[i]) {
 	pos = buffer[i] & 0x0F;
 	qled_display_positive(pins,pos);
