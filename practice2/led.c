@@ -18,7 +18,7 @@ static unsigned long buffer_size = 0;
 
 ///// Datas
 static char *buffer;
-struct proc_dir_entty *qled;
+struct proc_dir_entry *qled;
 static unsigned int count=0;
 
 // static dev_t dev_id;
