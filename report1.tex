@@ -1,0 +1,98 @@
+\documentclass{report}
+
+\usepackage{xeCJK}
+\setCJKmainfont{SimSun}
+
+\usepackage{listings}
+\lstset{breaklines,numbers=left}
+\usepackage{hyperref}
+\usepackage{titletoc}
+\usepackage[titletoc]{appendix}
+
+\title{Embedded System Design Practice Report I \\ Spring 2017}
+\author{李约瀚 \\ 14130140331 \\ me@qinka.pro \\ qinka@live.com}
+
+\begin{document}
+    \maketitle
+    \tableofcontents
+    
+    \chapter{License}
+    \label{chap:license}
+    This report and its codes are opened with GPL-3 license.
+    
+    The codes for these practices can be found on the%
+    \href{https://github.com/Qinka/embedded-system-design-homework}{GitHub},
+    and the ``codes'' include the source for this report(in \LaTeX).
+    
+    \chapter{Summary}
+    \label{chap:summary}
+    
+    \chapter{Simple Character Device}
+    \label{chap:scd}
+    
+    The first practice is about a simple character device. In this practice, I got the
+    basic skill to create a character device. Meanwhile, I wrote a user-space device deriver for LED-matrix to test
+    that character device.
+    
+    \section{design}
+    \label{chap:scd:design}
+    
+    Before writing the codes, I generally design the device:
+    \begin{itemize}
+        \item a global buffer \& counter
+        \item open \& close method
+        \item write \& read method
+        \item others
+    \end{itemize}
+    
+    For the global buffer, in the source I defined a counter and pointer for the buffer. When \lstinline|open()| executed,
+    the counter will increase by 1; and when \lstinline|release()| executed, the counter will decrease by 1. 
+    Meanwhile, in the methods -- \lstinline|open()| and \lstinline|close()|, the buffer will be initialed and 
+    freed, by using method \lstinline|kmalloc()| and \lstinline|kfree()|. 
+    In the \lstinline|write()| and \lstinline|read()|, the thing needed to do is writing or read buffer,
+    and update the offset of pointer.
+    
+    The remaining things are register the character device to system, using
+    \lstinline|alloc_chrdev_region|, and initial the device. The details can be found in listing \ref{code:led.c}.
+    
+    \section{Testing}
+    \label{chap:scd:test}
+    
+    After the character device deriver finished, I wrote a user-space deriver for a LED matrix to
+    light up the LEDs.
+    The deriver will read the character device, and parse the texts.
+    The driver will scan the each line of matrix and using the first four lower bit in a character to control which LED will be lighted up. The detail of source can be found at listing \ref{code:d:daemon.c}.
+    
+    The load the these kernel module and deriver for LEDs, while the character device file 
+    is created with command \lstinline|mknod|, and then using \lstinline|cat| or 
+    \lstinline|echo| write the characters to buffer.
+    
+    
+    
+    \begin{appendix}
+        \chapter{Sources}
+        \label{achap:source}
+        In this section, there are the sources in the practices, while the hyper-link to GitHub will be given.
+        
+        \section{Sources for Simple Character Device}
+        \label{src:scd}
+        
+        The following is the source of%
+        \href{https://github.com/Qinka/embedded-system-design-homework/blob/master/practice1/led.h}{the header file}.
+        \lstinputlisting[label={code:led.h},language=C,caption=Simple Character Device Source(led.h)]{practice1/led.h}
+        
+        The following is the%
+        \href{https://github.com/Qinka/embedded-system-design-homework/blob/master/practice1/led.c}{the source file}
+        
+        \lstinputlisting[label={code:led.c},language=C,caption=Simple Character Device Source(led.c)]{practice1/led.c}
+        
+        \section{User-space LEDs Matrix Driver}
+        \label{src:uslmd}
+        
+        The following is the \href{https://github.com/Qinka/embedded-system-design-homework/blob/master/led_daemon/daemon.c}{source} of a user-space driver for a $4 \times 4$ .
+        \lstinputlisting[label={code:d:daemon.c},language=C,caption=Simple Character Device Source(led.c)]{led_daemon/daemon.c}
+         
+    \end{appendix}
+    
+    
+\end{document}

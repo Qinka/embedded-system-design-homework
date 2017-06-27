@@ -1,0 +1,79 @@
+\documentclass{report}
+
+\usepackage{xeCJK}
+\setCJKmainfont{SimSun}
+
+\usepackage{listings}
+\lstset{breaklines,numbers=left}
+\usepackage{hyperref}
+\usepackage{titletoc}
+\usepackage[titletoc]{appendix}
+
+\title{Embedded System Design Practice Report II \\ Spring 2017}
+\author{李约瀚 \\ 14130140331 \\ me@qinka.pro \\ qinka@live.com}
+
+\begin{document}
+    \maketitle
+    \tableofcontents
+    
+    \chapter{License}
+    \label{chap:license}
+    This report and its codes are opened with GPL-3 license.
+    
+    The codes for these practices can be found on the%
+    \href{https://github.com/Qinka/embedded-system-design-homework}{GitHub},
+    and the ``codes'' include the source for this report(in \LaTeX).
+    
+    \chapter{Summary}
+    \label{chap:summary}
+    
+    \chapter{Module Parameter \& Proc File System}
+    \label{chap:mpnpsf}
+    
+    The second practice is about write a module with parameter and create a proc file in the  proc file system.
+    Use the parameter for module the setup the buffer's size, and use the proc file system to read and write the buffer.
+    
+    \section{design}
+    \label{chap:mpnpsf:design}
+    
+    So all I need to do are two things:  define a parameter, and create a file proc file system.
+    For the first one, I use the ``standard'' macros to declare the parameter for buffer size.
+    When it parameter of the buffer size not given, the default value(1024) will be used.
+    For the second one, what I need to do are create a variable to store the data, and than initial and register the proc file.
+    
+    The macro \lstinline|module_param| is used to declare a variable to be parameter.
+    And by using \lstinline|proc_create_data| the proc file can be create, and
+    \lstinline|remove_proc_entry| can be used to remove a proc file.
+    
+    The details of source cam be found in listing \ref{code:led.c}.
+    
+    \section{Testing}
+    \label{chap:mpnpsf:test}
+    
+    For testing, the first step is load the module. I use `insmod' command to load the module.
+    In this step, I can load the module with parameter \lstinline|buffer_size=2048|, 
+    which will set up a 2048-byte buffer, and I can also load the module without any parameter.
+    
+    Then I launch the LEDs' deriver written in practice I, then run the testing just like
+    what I run in the practice I.   
+        
+    \begin{appendix}
+        \chapter{Sources}
+        \label{achap:source}
+        
+        In this section, there are the sources in the practices, while the hyper-link to GitHub will be given.
+        
+        \section{Module Parameter \& Proc File System}
+        \label{src:mpnpsf}
+        
+        The following is the source's \href{https://github.com/Qinka/embedded-system-design-homework/blob/master/practice2/led.h}{header file} for module.
+        \lstinputlisting[label={code:led.h},language=C,caption=Module Parameter \& Proc File System(led.h)]{practice2/led.h}
+        
+        The following is the \href{https://github.com/Qinka/embedded-system-design-homework/blob/master/practice2/led.c}{source}
+        for module.
+        \lstinputlisting[label={code:led.c},language=C,caption=Module Parameter \& Proc File System(led.)]{practice2/led.c}
+        
+        
+    \end{appendix}
+    
+\end{document}
