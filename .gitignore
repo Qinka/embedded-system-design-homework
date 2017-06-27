@@ -59,3 +59,18 @@ auto
 
 daemon
 .\#*
+
+
+# for latex
+\#*\#
+.\#*
+*\~
+*.aux
+*.log
+*.pdf
+*.synctex.gz
+auto
+tmp.tex
+*.out
+*.toc
+*.synctex.gz(busy)
