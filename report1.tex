@@ -34,7 +34,7 @@
     basic skill to create a character device. Meanwhile, I wrote a user-space device deriver for LED-matrix to test
     that character device.
     
-    \section{design}
+    \section{Design}
     \label{chap:scd:design}
     
     Before writing the codes, I generally design the device:
@@ -55,12 +55,50 @@
     The remaining things are register the character device to system, using
     \lstinline|alloc_chrdev_region|, and initial the device. The details can be found in listing \ref{code:led.c}.
     
+    \section{Coding}
+    \label{chap:scd:coding}
+    
+    In this section, I will talk about the sources for this deriver.
+    In line 18 to line 24 at listing \ref{code:led.c}, the global variables are defined.
+    In line 26 to line 142, the codes are about the file system operations.
+    In line 147 to line 170, there is the initial method for kernel module, while
+    the line 173 to line 182 is the method for cleaning up.
+    
+    In the open and close methods(line 26 ~ line 56, listing \ref{code:led.c}) for device,
+    a count is set up, and it will increase or decrease when the device is opened or closed,
+    while the buffer will automatically be allocated or freed, when counter is zero.
+    In line 58 to line 76, the method to support system call -- \lstinline|lseek|.
+    In the read and write methods(line 78 ~ 106, listing \ref{code:led.c}) for device,
+    there are three thing to do:
+    \begin{itemize}
+        \item Bound checking
+        \item Data coping
+        \item Pointer setting
+    \end{itemize}
+    For the bound checking, the methods will check whether it is the end of buffer, and whether there are enough bytes to read or write. For the former, the function will return zero,
+    while the function will reset the length of what user what to read or write, for the latter.
+    In the line 108 to line 132, the codes is about ioctl. The functions in it include:
+    \begin{itemize}
+        \item free
+        \item allocate
+        \item reallocate
+    \end{itemize}
+    
+    And in the Linux-4.4%
+    \footnote{Till now, I do not know the version since which remove the operation \lstinline|ioctl|, and replace with \lstinline|unlocked_ioctl| and others operation.},
+    the \lstinline|unlocked_ioctl| is available.
+    
+    In the initial and cleaning-up method, the method \lstinline|alloc_chrdev_region|
+    to allocate major id for a character device, while method \lstinline|unregister_chrdev_region|
+    to free it. Meanwhile, the \lstinline|cdev_init| is to initial a device, and the
+    \lstinline|cdev_del| is to delete it.
+        
     \section{Testing}
     \label{chap:scd:test}
     
     After the character device deriver finished, I wrote a user-space deriver for a LED matrix to
     light up the LEDs.
-    The deriver will read the character device, and parse the texts.
+    The driver will read the character device, and parse the texts.
     The driver will scan the each line of matrix and using the first four lower bit in a character to control which LED will be lighted up. The detail of source can be found at listing \ref{code:d:daemon.c}.
     
     The load the these kernel module and deriver for LEDs, while the character device file 

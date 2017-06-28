@@ -27,10 +27,70 @@
     \chapter{Summary}
     \label{chap:summary}
     
+    \chapter{Tasklet \& Work-queue}
+    \label{chap:tnw}
+    
+    The third practice is about writing timers and using tasklet and work-queue to
+    execute tasks periodically.
+    
+    \section{Design}
+    \label{chap:tnw:design}
+    
+    There are four tasks to do:
+    \begin{itemize}
+        \item Set up timers
+        \item Set up tasklet
+        \item Set up work-queue
+        \item Write to LEDs device
+    \end{itemize}
+
+    Two timer are set up with different frequency, and when time up, the timers'
+    handlers will schedule the tasklet and work-queue, and at the same time,
+    the timers will be reset again.
+    
+    \section{Coding}
+    \label{chap:tnw:coding}
+    
+    So in line 21 to line 28, at listing \ref{code:task.c}, the data are defined.
+    In line 31 to line 32, the things about tasklet are defined,
+    while in line 35 to line 37 the things about work-queue are defined.
+    In line 41 to line 47, the timers are defined.
+    In line 52 to line 65, the method to write to device is defined.
+    In line 68 to line 90, there are the instances of workers of tasklet and work-queue.
+    Finally, in line 93 to line 118, there are the initial and cleaning-up method
+    for module, where initial and clean up the timers, tasklet, and work-queue.
+    
+    In line 52 to 65, the LEDs device is opened with method \lstinline|filp_open|.
+    And by using the write operation in the struct, the string, which will control
+    the LEDs, can be written in to device.
+    
+    In line 68 to 75, the workers for tasklet and work-queue write the control string
+    into the device with the method \lstinline|write_dev|. For tasklet's worker,
+    it writes string ``8888'' to let the one side of LED matrix light up,
+    and meanwhile in the work-queue's worker, the string ``1111'' will be written into
+    device, which will light up another side of LED matrix.
+    
+    In the line 95 to 107, at method of initial, in listing \ref{code:task.c},
+    the data about tasklet and work-queue are filled up with what them should be.
+    And the tasklet and work-queue are set up.
+    
     
     \begin{appendix}
         \chapter{Sources}
         \label{achap:source}
+        
+        In this section, there are the sources in the practices, while the hyper-link to GitHub will be given.
+        
+        \section{Tasklet \& Work-queue}
+        \label{src:tnw}
+        
+        The following is the
+        \href{https://github.com/Qinka/embedded-system-design-homework/blob/master/practice3/task.h}{header file}
+        of source.
+        \lstinputlisting[label={code:task.h},language=C,caption=Tasklet \& Work-queue(task.h)]{practice3/task.h}
+        
+        The following is the \href{https://github.com/Qinka/embedded-system-design-homework/blob/master/practice3/task.c}{source}.
+        \lstinputlisting[label={code:task.c},language=C,caption=Tasklet \& Work-queue(task.c)]{practice3/task.c}
     \end{appendix}
     
 \end{document}

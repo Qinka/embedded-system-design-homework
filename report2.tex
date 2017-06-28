@@ -30,10 +30,10 @@
     \chapter{Module Parameter \& Proc File System}
     \label{chap:mpnpsf}
     
-    The second practice is about write a module with parameter and create a proc file in the  proc file system.
+    The second practice is about writing a module with parameter and create a proc file in the  proc file system.
     Use the parameter for module the setup the buffer's size, and use the proc file system to read and write the buffer.
     
-    \section{design}
+    \section{Design}
     \label{chap:mpnpsf:design}
     
     So all I need to do are two things:  define a parameter, and create a file proc file system.
@@ -46,6 +46,14 @@
     \lstinline|remove_proc_entry| can be used to remove a proc file.
     
     The details of source cam be found in listing \ref{code:led.c}.
+        
+        
+    \section{Coding}
+    \label{chap:mpnpsf:coding}
+    
+    The codes are similar with the ones in the practice I. The only difference between two
+    practices is that the practice II uses proc file system, which lies in line 127 to line 141,
+    in the initial and cleaning-up methods, at listing \ref{code:led.c}.
     
     \section{Testing}
     \label{chap:mpnpsf:test}
@@ -55,7 +63,8 @@
     which will set up a 2048-byte buffer, and I can also load the module without any parameter.
     
     Then I launch the LEDs' deriver written in practice I, then run the testing just like
-    what I run in the practice I.   
+    what I run in the practice I.
+    
         
     \begin{appendix}
         \chapter{Sources}
@@ -72,6 +81,7 @@
         The following is the \href{https://github.com/Qinka/embedded-system-design-homework/blob/master/practice2/led.c}{source}
         for module.
         \lstinputlisting[label={code:led.c},language=C,caption=Module Parameter \& Proc File System(led.)]{practice2/led.c}
+        
         
         
     \end{appendix}

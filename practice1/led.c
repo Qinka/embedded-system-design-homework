@@ -154,7 +154,7 @@ static int init_ledc(void) {
 	return -1;
   }
   led_major = MAJOR(dev_id);
-  led_devs = (struct led_dev*)kzalloc(sizeof(struct led_dev),GFP_KERNEL);
+  led_devs = (struct led_dev*)kmalloc(sizeof(struct led_dev),GFP_KERNEL);
   if (led_devs == NULL) {
     printk("LED CONTROLLER: fail to create devs");
     return -1;
