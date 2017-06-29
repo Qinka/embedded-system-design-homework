@@ -31,6 +31,27 @@
     \begin{appendix}
         \chapter{Sources}
         \label{achap:source}
+
+        In this section, there are the sources in the practices, while the hyper-link to GitHub will be given.
+
+        \section{Memory Mapping}
+        \label{src:memmap}
+        
+        The following is the
+        \href{https://github.com/Qinka/embedded-system-design-homework/blob/master/practice4/led.h}{header file} 
+        of source.
+        \lstinputlisting[label={code:led.h},language=C,caption=Memory Mapping(led.h)]{practice4/led.h}
+
+        The following is the  \href{https://github.com/Qinka/embedded-system-design-homework/blob/master/practice4/led.c}{source}.
+        \lstinputlisting[label={code:led.h},language=C,caption=Memory Mapping(led.c)]{practice4/led.c}
+
+         \section{User-space LEDs Matrix Driver(Using Memory Mapping)}
+        \label{src:uslmd}
+        
+        The following is the \href{https://github.com/Qinka/embedded-system-design-homework/blob/master/led_mm_daemon/daemon.c}{source} of a user-space driver for a $4 \times 4$ .
+        \lstinputlisting[label={code:d:daemon.c},language=C,caption=User-space LEDs Matrix Drive]{led_mm_daemon/daemon.c}
+
+
     \end{appendix}
     
 \end{document}
